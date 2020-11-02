@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ChoseModeActivity">
+    <ImageView
+        android:src="@drawable/taxi_splashscreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="200dp"
+            android:background="#265027"
+            android:elevation="5dp"
+            android:fontFamily="@font/advent_pro_semibold"
+            android:gravity="center_horizontal"
+            android:text="Taxi App"
+            android:textColor="#FFEB3B"
+            android:textSize="70sp"
+            android:textStyle="bold|italic"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+           />
+        <Button
+            android:id="@+id/driver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="100dp"
+            android:backgroundTint="#FFEB3B"
+            android:text="I'm a driver"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:textColor="#265027"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:padding="10dp"
+            android:onClick="goToDriverSignIn"/>
+        <Button
+            android:layout_marginTop="15dp"
+            android:id="@+id/passenger"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="I'm a passanger"
+            android:textColor="#FFEB3B"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:backgroundTint="#265027"
+            android:padding="10dp"
+            android:onClick="goToPassangerSignIn"
+            />
+
+
+    </LinearLayout>
+ </FrameLayout>

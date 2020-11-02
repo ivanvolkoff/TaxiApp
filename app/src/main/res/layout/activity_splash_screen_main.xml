@@ -28,7 +28,9 @@
             android:textColor="#FFEB3B"
             android:textSize="70sp"
             android:textStyle="bold|italic"
-            android:elevation="5dp"/>
+            android:elevation="5dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp" />
     </LinearLayout>
 
 

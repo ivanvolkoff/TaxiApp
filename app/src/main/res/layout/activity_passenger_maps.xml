@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:map="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    tools:context=".PassengerMapsActivity">
+    <LinearLayout
+        android:id="@+id/topButtons"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentLeft="true">
+
+        <Button
+            android:id="@+id/settings_button"
+            android:layout_width="11dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="#265027"
+            android:text="Settings" />
+        <Button
+            android:id="@+id/sign_out_Button"
+            android:text="Sign Out"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="#265027"/>
+
+
+    </LinearLayout>
+
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="635dp"
+        android:layout_below="@id/topButtons"
+        android:layout_above="@id/bookTaxiButton"/>
+    <Button
+        android:id="@+id/bookTaxiButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:text="BookTaxi"
+        android:backgroundTint="#265027"
+        android:textColor="#FFEB3B"
+        android:layout_alignParentLeft="true" />
+</RelativeLayout>
