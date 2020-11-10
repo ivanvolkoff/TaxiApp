@@ -2,13 +2,13 @@ package com.example.taxiapp
 
 import android.content.Intent
 import android.os.Bundle
-import android.provider.ContactsContract
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.taxiapp.model.Driver
+import com.firebase.geofire.GeoFire
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.AuthResult
@@ -16,6 +16,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+
 
 class DriverSignInActivity : AppCompatActivity() {
     private lateinit var emailInput: TextInputLayout
@@ -31,7 +32,8 @@ class DriverSignInActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private val TAG: String = "log record"
     private var database: FirebaseDatabase? = null
-    private lateinit var usersDatabaseReference : DatabaseReference
+    private lateinit var DriversDatabaseReference : DatabaseReference
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,9 +41,7 @@ class DriverSignInActivity : AppCompatActivity() {
         setContentView(R.layout.activity_driver_sign_in)
 
 
-        database = FirebaseDatabase.getInstance()
-        //initializin reference to database and creating root for users
-        usersDatabaseReference = database?.reference!!.child("drivers")
+
         initViews()
         auth = FirebaseAuth.getInstance()
     }
@@ -166,8 +166,11 @@ class DriverSignInActivity : AppCompatActivity() {
                         if (task.isSuccessful) {
                             // Sign in success, update UI with the signed-in user's information
                             Toast.makeText(this, "sign up success", Toast.LENGTH_LONG).show()
-                            val user: FirebaseUser? = auth.currentUser
-                            createUser(user)
+                            var userID = auth.currentUser?.uid.toString()
+                            var currentUserDB: DatabaseReference =
+                                FirebaseDatabase.getInstance().reference.child("Users")
+                                    .child("Drivers").child(userID)
+                            currentUserDB.setValue(createDriver())
                             startActivity(
                                 Intent(this@DriverSignInActivity, DriverMapsActivity::class.java)
                             )
@@ -185,18 +188,6 @@ class DriverSignInActivity : AppCompatActivity() {
         }
     }
 
-    private fun createUser(user: FirebaseUser?) {
-        var firstName = nameInput.editText?.text.toString()
-        var lastName = lastName.editText?.text.toString()
-        var car = carTV.editText?.text.toString()
-        var email = emailInput.editText?.text.toString()
-
-        val driver : Driver = Driver(firstName, lastName, car,email)
-
-
-        usersDatabaseReference.push().setValue(driver)
-    }
-
     private fun initViews() {
         emailInput = findViewById(R.id.driver_input_email)
         nameInput = findViewById(R.id.driver_name_input)
@@ -207,5 +198,16 @@ class DriverSignInActivity : AppCompatActivity() {
         activityHeader = findViewById(R.id.driverSignInSignUp)
         lastName= findViewById(R.id.driver_last_name_input)
         carTV = findViewById(R.id.driver_car_model_input)
+    }
+
+    private fun createDriver():Driver{
+        var driver : Driver = Driver(
+            nameInput.editText?.text.toString(),
+            lastName.editText?.text.toString(),
+            carTV.editText?.text.toString(),
+            emailInput.editText?.text.toString(),
+            geoFire = null
+        )
+        return driver
     }
 }

@@ -48,21 +48,26 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var locationCallback: LocationCallback? = null
     private var currentLocation: Location? = null
     private var isLocationUpdatesActive = false
-    private lateinit var settingsButton: Button
-    private lateinit var sign_outButton: Button
+    private lateinit var sign_out_Button: Button
+
     private lateinit var auth: FirebaseAuth
-    private lateinit var currentUser: FirebaseUser
+    private lateinit var currentDriver: FirebaseUser
+    private var database: FirebaseDatabase? = null
+    private lateinit var usersDatabaseReference: DatabaseReference
+    var userID: String = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_driver_maps)
 
-        settingsButton = findViewById(R.id.settings_button)
-        sign_outButton = findViewById(R.id.sign_out_Button)
         auth = FirebaseAuth.getInstance()
-        currentUser = auth.currentUser!!
+        currentDriver = auth.currentUser!!
+        userID = currentDriver.uid.toString()
+        sign_out_Button = findViewById(R.id.sign_out_Button)
+        usersDatabaseReference =
+            FirebaseDatabase.getInstance().reference.child("Users").child("Drivers")
 
-
-        sign_outButton.setOnClickListener {
+        sign_out_Button.setOnClickListener {
             auth.signOut()
             signOutDriver()
         }
@@ -82,23 +87,21 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
         buildLocationSettingsRequest()
         startLocationUpdates()
 
-        settingsButton.setOnClickListener {
-            var intent : Intent = Intent(this,DriverProfileSetings::class.java)
-            intent.putExtra("driverName", currentUser)
-            startActivity(intent)
-        }
+
     }
 
     private fun signOutDriver() {
 
-        var driverUserId: String? = FirebaseAuth.getInstance().currentUser?.uid
-        var driversGeoFire: DatabaseReference =
-            FirebaseDatabase.getInstance().reference.child("driversGeoFire")
+        val driverUserId: String? = FirebaseAuth.getInstance().currentUser?.uid
+        val driversGeoFire: DatabaseReference =
+            FirebaseDatabase.getInstance().reference.child("Users").child("Drivers")
+                .child("Location")
 
-        var geoFire = GeoFire(driversGeoFire)
+        val geoFire = GeoFire(driversGeoFire)
         geoFire.removeLocation(driverUserId)
 
-        intent = Intent(this,DriverSignInActivity::class.java)
+
+        intent = Intent(this, DriverSignInActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
@@ -107,13 +110,15 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-//        if (currentLocation != null) {
-//            mMap.clear()
-//            val driverLocation = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
-//            mMap.addMarker(MarkerOptions().position(driverLocation).title("Driver Locaiton"))
-//            mMap.moveCamera(CameraUpdateFactory.newLatLng(driverLocation))
-//
-//        }
+
+        if (currentLocation != null) {
+            val driverLocation = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
+            mMap.addMarker(MarkerOptions().position(driverLocation).title("Driver Locaiton"))
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(driverLocation))
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(10f))
+        }
+
+
     }
 
     private fun stopLocationUpdates() {
@@ -145,13 +150,6 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
                             ) !=
                         PackageManager.PERMISSION_GRANTED
                     ) {
-                        // TODO: Consider calling
-                        //    ActivityCompat#requestPermissions
-                        // here to request the missing permissions, and then overriding
-                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                        //                                          int[] grantResults)
-                        // to handle the case where the user grants the permission. See the documentation
-                        // for ActivityCompat#requestPermissions for more details.
                         return@OnSuccessListener
                     }
                     fusedLocationClient!!.requestLocationUpdates(
@@ -229,20 +227,19 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun updateLocationUi() {
         if (currentLocation != null) {
 
-            var currentLatLng = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
+            val currentLatLng = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
             mMap.clear()
             mMap.addMarker(MarkerOptions().position(currentLatLng).title("Driver Locaiton"))
             mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng))
-//            mMap.animateCamera(CameraUpdateFactory.zoomTo(12f))
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(10f))
 
-            var driverUserId: String? = FirebaseAuth.getInstance().currentUser?.uid
-            var driversGeoFire: DatabaseReference =
-                FirebaseDatabase.getInstance().reference.child("driversGeoFire")
+            val driversGeoFire: DatabaseReference =
+                FirebaseDatabase.getInstance().reference.child("Users")
+                    .child("Drivers").child("Location")
 
-
-            var geoFire = GeoFire(driversGeoFire)
+            val geoFire = GeoFire(driversGeoFire)
             geoFire.setLocation(
-                driverUserId, GeoLocation(
+                currentDriver.uid, GeoLocation(
                     currentLocation!!.latitude,
                     currentLocation!!.longitude
                 )
@@ -253,8 +250,8 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun buildLocationRequest() {
         locationRequest = LocationRequest()
-        locationRequest!!.interval = 10000
-        locationRequest!!.fastestInterval = 3000
+        locationRequest!!.interval = 1000
+        locationRequest!!.fastestInterval = 1000
         locationRequest!!.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
     }
 
@@ -323,7 +320,7 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
         grantResults: IntArray
     ) {
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
-            if (grantResults.size <= 0) {
+            if (grantResults.isEmpty()) {
                 Log.d(
                     "onRequestPermissions",
                     "Request was cancelled"

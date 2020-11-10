@@ -12,7 +12,7 @@
     com.example.taxiapp
 
     SHA-1 certificate fingerprint:
-    DE:2F:5D:88:99:5F:1A:F7:BB:2F:2D:2A:AA:8B:D9:8C:DB:CC:13:C0
+    60:E5:91:2E:4A:6A:B5:83:4C:99:F4:82:6F:E8:CB:28:4C:69:23:F4
 
     Alternatively, follow the directions here:
     https://developers.google.com/maps/documentation/android/start#get-key
@@ -20,5 +20,5 @@
     Once you have your key (it starts with "AIza"), replace the "google_maps_key"
     string in this file.
     -->
-    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyAq3jgRzBHmrxfKeDoX0eD7L4FfSCcOP7E</string>
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyCZrEEh0FLEntI86a9WLdmBwVyk-ZoLRBI</string>
 </resources>

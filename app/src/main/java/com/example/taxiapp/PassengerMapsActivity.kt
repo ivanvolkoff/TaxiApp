@@ -28,7 +28,6 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.material.snackbar.Snackbar
@@ -64,7 +63,6 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var geoFire: GeoFire
 
 
-
     private var isDriverFound: Boolean = false
     private var nearestDriverId: String = ""
 
@@ -78,7 +76,7 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         auth = FirebaseAuth.getInstance()
         currentUser = auth.currentUser!!
-        driversGeoFire = FirebaseDatabase.getInstance().reference.child("driversGeoFire")
+        driversGeoFire = FirebaseDatabase.getInstance().reference.child("Users").child("Drivers").child("Location")
 
         sign_outButton.setOnClickListener {
             auth.signOut()
@@ -123,12 +121,7 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (!isDriverFound) {
                     isDriverFound = true
                     nearestDriverId = key!!
-                    Toast.makeText(
-                        this@PassengerMapsActivity,
-                        "Taxi Cab Found" + nearestDriverId,
-                        Toast.LENGTH_LONG
-                    ).show()
-
+                    Toast.makeText(this@PassengerMapsActivity, "Taxi Cab Found$nearestDriverId", Toast.LENGTH_LONG).show()
                     getNearestDriverLocation()
                 }
             }
@@ -160,33 +153,28 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun getNearestDriverLocation() {
         bookTaxi.text = "Getting your driver location"
         nearestDriverLocation =
-            FirebaseDatabase.getInstance().reference.child("driversGeoFire").child(nearestDriverId)
-                .child("l")
+            FirebaseDatabase.getInstance().reference.child("Users").child("Drivers").child("Location").child(nearestDriverId).child("l")
         nearestDriverLocation.addValueEventListener(object : ValueEventListener {
             @SuppressLint("SetTextI18n")
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
-                    var driverLocationParameters: List<Any> = snapshot.value as List<Any>
+                    val driverLocationParameters: List<Any> = snapshot.value as List<Any>
 
                     var latitude: Double = 0.0
                     var longitude: Double = 0.0
 
-                    if (driverLocationParameters.get(0) != null) {
-                        latitude = driverLocationParameters[0] as Double
-                    }
+                    latitude = driverLocationParameters[0] as Double
 
-                    if (driverLocationParameters.get(1) != null) {
-                        longitude = driverLocationParameters[1]!! as Double
-                    }
+                    longitude = driverLocationParameters[1]!! as Double
 
-                    var driverLatLng = LatLng(latitude, longitude)
+                    val driverLatLng = LatLng(latitude, longitude)
 
                     val driverLoc = Location("")
                     driverLoc.latitude = latitude
                     driverLoc.longitude = longitude
 
                     val distanceToDriver: Float = driverLoc.distanceTo(currentLocation) / 1000
-                    var distanceInKm : String = "%.2f".format(distanceToDriver)
+                    val distanceInKm: String = "%.2f".format(distanceToDriver)
                     bookTaxi.text = "Distance to driver $distanceInKm Km"
 
                     mMap.addMarker(
@@ -206,12 +194,12 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun signOutPassenger() {
 
-        var passrngerUserId: String? = FirebaseAuth.getInstance().currentUser?.uid
+        var passengerUserId: String? = FirebaseAuth.getInstance().currentUser?.uid
         var passenger: DatabaseReference =
             FirebaseDatabase.getInstance().reference.child("passengersGeoFire")
 
         var geoFire = GeoFire(passenger)
-        geoFire.removeLocation(passrngerUserId)
+        geoFire.removeLocation(passengerUserId)
 
         intent = Intent(this, PassengerSignInActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -222,12 +210,12 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-//        if (currentLocation != null) {
-//            val driverLocation = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
-//            mMap.addMarker(MarkerOptions().position(driverLocation).title("Driver Locaiton"))
-//            mMap.moveCamera(CameraUpdateFactory.newLatLng(driverLocation))
-//            mMap.animateCamera(CameraUpdateFactory.zoomTo(20f))
-//        }
+       if (currentLocation != null) {
+            val driverLocation = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
+            mMap.addMarker(MarkerOptions().position(driverLocation).title("Driver Locaiton"))
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(driverLocation))
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(10f))
+       }
     }
 
     private fun stopLocationUpdates() {

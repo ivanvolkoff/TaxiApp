@@ -12,6 +12,8 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 
 class PassengerSignInActivity : AppCompatActivity() {
     private lateinit var emailInput: TextInputLayout
@@ -156,7 +158,11 @@ class PassengerSignInActivity : AppCompatActivity() {
                         if (task.isSuccessful) {
                             // Sign in success, update UI with the signed-in user's information
                             Toast.makeText(this, "sign up success", Toast.LENGTH_LONG).show()
-                            val user: FirebaseUser? = auth.currentUser
+                            var userID = auth.currentUser?.uid.toString()
+                            var currentUserDB: DatabaseReference =
+                                FirebaseDatabase.getInstance().reference.child("Users")
+                                    .child("Customers").child(userID)
+                            currentUserDB.setValue(true)
                             startActivity(
                                 Intent(
                                     this@PassengerSignInActivity,
