@@ -1,5 +1,6 @@
 package com.example.taxiapp
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -11,7 +12,6 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 
@@ -25,7 +25,6 @@ class PassengerSignInActivity : AppCompatActivity() {
     private var isLoginModeActive = false
     private lateinit var activityHeader: TextView
     private lateinit var auth: FirebaseAuth
-    private val TAG: String = "log record"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +35,7 @@ class PassengerSignInActivity : AppCompatActivity() {
     }
 
 
+    @SuppressLint("SetTextI18n")
     fun toggleLoginSignUp(view: View) {
         if (isLoginModeActive) {
             isLoginModeActive = false
@@ -65,17 +65,22 @@ class PassengerSignInActivity : AppCompatActivity() {
     }
 
     private fun isNameValid(): Boolean {
-        var nameInputSring: String = nameInput.editText?.text.toString().trim()
+        val nameInputString: String = nameInput.editText?.text.toString().trim()
 
-        if (nameInputSring.isEmpty()) {
-            nameInput.error = "name"
-            return false
-        } else if (nameInputSring.length > 15) {
-            nameInput.error = "Name length have to be less than 15 symbols"
-            return false
-        } else {
-            nameInput.error = ""
-            return true
+
+        return when {
+            nameInputString.isEmpty() -> {
+                nameInput.error = "name"
+                false
+            }
+            nameInputString.length > 15 -> {
+                nameInput.error = "Name length have to be less than 15 symbols"
+                false
+            }
+            else -> {
+                nameInput.error = ""
+                true
+            }
         }
     }
 
@@ -100,21 +105,21 @@ class PassengerSignInActivity : AppCompatActivity() {
     }
 
     private fun isPasswordConfirmValid(): Boolean {
-        var passwordInputSring: String = passwordInput.editText?.text.toString().trim()
-        var passwordConfirmInputSring: String =
+        val passwordInputSring: String = passwordInput.editText?.text.toString().trim()
+        val passwordConfirmInputSring: String =
             passwordConfirmInput.editText?.text.toString().trim()
-        if (!passwordInputSring.equals(passwordConfirmInputSring)) {
+        return if (passwordInputSring != passwordConfirmInputSring) {
             passwordInput.error = "Passwords didn't match"
             passwordConfirmInput.error = "Passwords didn't match"
-            return false
+            false
         } else {
             passwordInput.error = ""
             passwordConfirmInput.error = ""
-            return true
+            true
         }
     }
 
-    fun loginSignUpPassanger(view: View) {
+    fun loginSignUpUser(view: View) {
         if (!isEmailValid() or !isNameValid() or !isPasswordValid()) {
             return
         }
@@ -127,9 +132,9 @@ class PassengerSignInActivity : AppCompatActivity() {
                     if (task.isSuccessful) {
                         // Sign in success, update UI with the signed-in user's information
                         Toast.makeText(this, "log in success", Toast.LENGTH_LONG).show()
-                        val user = auth.currentUser
+                        auth.currentUser
                         startActivity(
-                            Intent(this@PassengerSignInActivity, PassengerMapsActivity::class.java)
+                            Intent(this@PassengerSignInActivity ,PassengerMapsActivity::class.java)
                         )
                     } else {
                         // If sign in fails, display a message to the user.
@@ -141,8 +146,6 @@ class PassengerSignInActivity : AppCompatActivity() {
                         //updateUI(null)
                         // ...
                     }
-
-                    // ...
                 }
         } else if (!isLoginModeActive) {
             if (!isEmailValid() or !isNameValid() or !isPasswordValid() or !isPasswordConfirmValid()) {
@@ -158,16 +161,13 @@ class PassengerSignInActivity : AppCompatActivity() {
                         if (task.isSuccessful) {
                             // Sign in success, update UI with the signed-in user's information
                             Toast.makeText(this, "sign up success", Toast.LENGTH_LONG).show()
-                            var userID = auth.currentUser?.uid.toString()
-                            var currentUserDB: DatabaseReference =
+                            val userID = auth.currentUser?.uid.toString()
+                            val currentUserDB: DatabaseReference =
                                 FirebaseDatabase.getInstance().reference.child("Users")
                                     .child("Customers").child(userID)
                             currentUserDB.setValue(true)
                             startActivity(
-                                Intent(
-                                    this@PassengerSignInActivity,
-                                    PassengerMapsActivity::class.java
-                                )
+                                Intent(this@PassengerSignInActivity ,PassengerMapsActivity::class.java)
                             )
                         } else {
                             // If sign in fails, display a message to the user.
@@ -184,10 +184,10 @@ class PassengerSignInActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        emailInput = findViewById(R.id.driver_input_email)
-        nameInput = findViewById(R.id.driver_name_input)
-        passwordInput = findViewById(R.id.driver_password_input)
-        passwordConfirmInput = findViewById(R.id.driver_password_confirmation_input)
+        emailInput = findViewById(R.id.passenger_input_email)
+        nameInput = findViewById(R.id.passenger_name_input)
+        passwordInput = findViewById(R.id.passenger_passwordInput)
+        passwordConfirmInput = findViewById(R.id.passenger_password_confirmation_input)
         logInSignInButton = findViewById(R.id.passenger_login_button)
         toggleLoginSignUp = findViewById(R.id.passenger_toggle_login_signup_textView)
         activityHeader = findViewById(R.id.passengerSignInSignUp)

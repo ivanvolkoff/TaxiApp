@@ -68,7 +68,6 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
             FirebaseDatabase.getInstance().reference.child("Users").child("Drivers")
 
         sign_out_Button.setOnClickListener {
-            auth.signOut()
             signOutDriver()
         }
 
@@ -92,15 +91,9 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun signOutDriver() {
 
-        val driverUserId: String? = FirebaseAuth.getInstance().currentUser?.uid
-        val driversGeoFire: DatabaseReference =
-            FirebaseDatabase.getInstance().reference.child("Users").child("Drivers")
-                .child("Location")
+        deleteLocationFromFBDB()
 
-        val geoFire = GeoFire(driversGeoFire)
-        geoFire.removeLocation(driverUserId)
-
-
+        auth.signOut()
         intent = Intent(this, DriverSignInActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
@@ -113,7 +106,7 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         if (currentLocation != null) {
             val driverLocation = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
-            mMap.addMarker(MarkerOptions().position(driverLocation).title("Driver Locaiton"))
+            mMap.addMarker(MarkerOptions().position(driverLocation).title("Driver Location"))
             mMap.moveCamera(CameraUpdateFactory.newLatLng(driverLocation))
             mMap.animateCamera(CameraUpdateFactory.zoomTo(10f))
         }
@@ -234,8 +227,7 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
             mMap.animateCamera(CameraUpdateFactory.zoomTo(10f))
 
             val driversGeoFire: DatabaseReference =
-                FirebaseDatabase.getInstance().reference.child("Users")
-                    .child("Drivers").child("Location")
+                FirebaseDatabase.getInstance().reference.child("driversAvailable")
 
             val geoFire = GeoFire(driversGeoFire)
             geoFire.setLocation(
@@ -258,6 +250,11 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onPause() {
         super.onPause()
         stopLocationUpdates()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        deleteLocationFromFBDB()
     }
 
     override fun onResume() {
@@ -357,5 +354,21 @@ class DriverMapsActivity : AppCompatActivity(), OnMapReadyCallback {
         return permissionState == PackageManager.PERMISSION_GRANTED
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        val driversGeoFire: DatabaseReference = FirebaseDatabase.getInstance().reference.child("driversAvailable")
+
+
+        val geoFire = GeoFire(driversGeoFire)
+        geoFire.removeLocation(currentDriver.uid)
+    }
+
+    fun deleteLocationFromFBDB(){
+        val driversGeoFire: DatabaseReference =
+            FirebaseDatabase.getInstance().reference.child("driversAvailable")
+
+        val geoFire = GeoFire(driversGeoFire)
+        geoFire.removeLocation(currentDriver.uid)
+    }
 
 }

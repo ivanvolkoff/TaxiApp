@@ -16,6 +16,7 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.example.taxiapp.model.Driver
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
 import com.firebase.geofire.GeoQuery
@@ -28,6 +29,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.material.snackbar.Snackbar
@@ -38,8 +40,9 @@ import com.google.firebase.database.*
 class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
-    private val CHECK_SETTINGS_CODE = 111
-    private val REQUEST_LOCATION_PERMISSION = 111
+    private var CHECK_SETTINGS_CODE = 111
+    private var REQUEST_LOCATION_PERMISSION = 111
+
 
     private var fusedLocationClient: FusedLocationProviderClient? = null
     private var settingsClient: SettingsClient? = null
@@ -47,56 +50,38 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var locationSettingsRequest: LocationSettingsRequest? = null
     private var locationCallback: LocationCallback? = null
     private var currentLocation: Location? = null
-
     private var isLocationUpdatesActive = false
-
-    private lateinit var settingsButton: Button
-    private lateinit var sign_outButton: Button
-
+    private lateinit var signOutButton: Button
+    private lateinit var bookTaxiButton: Button
+    private lateinit var pickUpLocation: LatLng
     private lateinit var auth: FirebaseAuth
-    private lateinit var currentUser: FirebaseUser
-    private lateinit var bookTaxi: Button
-
-    private var searchRadius: Double = 1.0
+    private lateinit var currentDriver: FirebaseUser
+    var userID: String = ""
     private lateinit var driversGeoFire: DatabaseReference
-    private lateinit var nearestDriverLocation: DatabaseReference
     private lateinit var geoFire: GeoFire
-
-
+    private var searchRadius: Double = 1.0
     private var isDriverFound: Boolean = false
     private var nearestDriverId: String = ""
+    private lateinit var nearestDriverLocation: DatabaseReference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_passenger_maps)
 
-        settingsButton = findViewById(R.id.settings_button)
-        sign_outButton = findViewById(R.id.sign_out_Button)
-        bookTaxi = findViewById(R.id.bookTaxiButton)
-
         auth = FirebaseAuth.getInstance()
-        currentUser = auth.currentUser!!
-        driversGeoFire = FirebaseDatabase.getInstance().reference.child("Users").child("Drivers").child("Location")
+        currentDriver = auth.currentUser!!
+        userID = currentDriver.uid
 
-        sign_outButton.setOnClickListener {
-            auth.signOut()
-            signOutPassenger()
-        }
-
-        bookTaxi.setOnClickListener {
-            bookTaxi.text = "Getting your taxi..."
-            gettingNearestTaxi()
-        }
-
-
+        initView()
+        initClicks()
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-        fusedLocationClient = LocationServices
-            .getFusedLocationProviderClient(this)
-        settingsClient = LocationServices.getSettingsClient(this)
 
+        driversGeoFire = FirebaseDatabase.getInstance().reference.child("driversAvailable")
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        settingsClient = LocationServices.getSettingsClient(this)
 
         buildLocationRequest()
         buildLocationCallBack()
@@ -121,7 +106,20 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (!isDriverFound) {
                     isDriverFound = true
                     nearestDriverId = key!!
-                    Toast.makeText(this@PassengerMapsActivity, "Taxi Cab Found$nearestDriverId", Toast.LENGTH_LONG).show()
+                    Log.i("cause", "$nearestDriverId")
+                    Toast.makeText(
+                        this@PassengerMapsActivity,
+                        "Taxi Cab Found$nearestDriverId",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    var driverRef =
+                        FirebaseDatabase.getInstance().reference.child("Users").child("Drivers")
+                            .child(nearestDriverId)
+                    var customerId = auth.currentUser?.uid
+                    var map = hashMapOf<String, Any?>()
+                    map.put("customerRideId", customerId)
+                    driverRef.updateChildren(map)
+
                     getNearestDriverLocation()
                 }
             }
@@ -151,37 +149,52 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun getNearestDriverLocation() {
-        bookTaxi.text = "Getting your driver location"
+        bookTaxiButton.text = "Getting your driver location"
+        Log.i("cause", "on button spell getting your driver location")
         nearestDriverLocation =
-            FirebaseDatabase.getInstance().reference.child("Users").child("Drivers").child("Location").child(nearestDriverId).child("l")
+            FirebaseDatabase.getInstance().reference.child("driversAvailable")
+                .child(nearestDriverId)
+                .child("l")
+        Log.i("cause", "onearestdriverlocation get instance")
+
         nearestDriverLocation.addValueEventListener(object : ValueEventListener {
-            @SuppressLint("SetTextI18n")
+
             override fun onDataChange(snapshot: DataSnapshot) {
+                Log.i("cause", "on data changed before snapshot")
+
                 if (snapshot.exists()) {
-                    val driverLocationParameters: List<Any> = snapshot.value as List<Any>
+                    Log.i("cause", "on data changed after snapshot")
+
+                    var driverLocationParameters: List<Any> = snapshot.value as List<Any>
+
 
                     var latitude: Double = 0.0
                     var longitude: Double = 0.0
 
-                    latitude = driverLocationParameters[0] as Double
+                    if (driverLocationParameters[0] != null) {
+                        latitude = driverLocationParameters[0] as Double
+                    }
 
-                    longitude = driverLocationParameters[1]!! as Double
-
-                    val driverLatLng = LatLng(latitude, longitude)
+                    if (driverLocationParameters.get(1) != null) {
+                        longitude = driverLocationParameters[1]!! as Double
+                    }
+                    Log.i("cause", "$latitude,  $longitude  ")
+                    var driverLatLng = LatLng(latitude, longitude)
 
                     val driverLoc = Location("")
                     driverLoc.latitude = latitude
                     driverLoc.longitude = longitude
 
                     val distanceToDriver: Float = driverLoc.distanceTo(currentLocation) / 1000
-                    val distanceInKm: String = "%.2f".format(distanceToDriver)
-                    bookTaxi.text = "Distance to driver $distanceInKm Km"
+                    var distanceInKm: String = "%.2f".format(distanceToDriver)
+                    bookTaxiButton.text = "Distance to driver $distanceInKm Km"
+                    Log.i("cause", "Distance to driver $distanceInKm Km")
 
                     mMap.addMarker(
                         MarkerOptions().position(driverLatLng).title("Your driver is here")
                     )
+                    Log.i("cause", "Your driver is here")
                 }
-
 
             }
 
@@ -192,15 +205,13 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     }
 
+
     private fun signOutPassenger() {
+        val customerRequestRef = FirebaseDatabase.getInstance().getReference("customerRequests")
+        val geoFire: GeoFire = GeoFire(customerRequestRef)
+        geoFire.removeLocation(auth.currentUser?.uid)
 
-        var passengerUserId: String? = FirebaseAuth.getInstance().currentUser?.uid
-        var passenger: DatabaseReference =
-            FirebaseDatabase.getInstance().reference.child("passengersGeoFire")
-
-        var geoFire = GeoFire(passenger)
-        geoFire.removeLocation(passengerUserId)
-
+        auth.signOut()
         intent = Intent(this, PassengerSignInActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
@@ -210,12 +221,7 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-       if (currentLocation != null) {
-            val driverLocation = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
-            mMap.addMarker(MarkerOptions().position(driverLocation).title("Driver Locaiton"))
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(driverLocation))
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(10f))
-       }
+
     }
 
     private fun stopLocationUpdates() {
@@ -231,7 +237,6 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun startLocationUpdates() {
         isLocationUpdatesActive = true
-
         settingsClient!!.checkLocationSettings(locationSettingsRequest)
             .addOnSuccessListener(this,
                 OnSuccessListener {
@@ -247,7 +252,6 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
                             ) !=
                         PackageManager.PERMISSION_GRANTED
                     ) {
-                        // TODO: Consider calling
                         return@OnSuccessListener
                     }
                     fusedLocationClient!!.requestLocationUpdates(
@@ -325,32 +329,17 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun updateLocationUi() {
         if (currentLocation != null) {
             var currentLatLng = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
-            mMap.clear()
-            mMap.addMarker(MarkerOptions().position(currentLatLng).title("Passenger Location"))
+//            mMap.clear()
+//            mMap.addMarker(MarkerOptions().position(currentLatLng).title("Passenger Location"))
             mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng))
-//            mMap.animateCamera(CameraUpdateFactory.zoomTo(12f))
-
-            var passengerUserId: String? = FirebaseAuth.getInstance().currentUser?.uid
-            var pasengersGeoFire: DatabaseReference =
-                FirebaseDatabase.getInstance().reference.child("passengersGeoFire")
-            var passengers: DatabaseReference =
-                FirebaseDatabase.getInstance().reference.child("passengers")
-            passengers.setValue("passangers")
-            var geoFire = GeoFire(pasengersGeoFire)
-            geoFire.setLocation(
-                passengerUserId, GeoLocation(
-                    currentLocation!!.latitude,
-                    currentLocation!!.longitude
-                )
-            )
-
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(15f))
         }
     }
 
     private fun buildLocationRequest() {
         locationRequest = LocationRequest()
-        locationRequest!!.interval = 10000
-        locationRequest!!.fastestInterval = 3000
+        locationRequest!!.interval = 1000
+        locationRequest!!.fastestInterval = 1000
         locationRequest!!.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
     }
 
@@ -419,7 +408,7 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
         grantResults: IntArray
     ) {
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
-            if (grantResults.size <= 0) {
+            if (grantResults.isEmpty()) {
                 Log.d(
                     "onRequestPermissions",
                     "Request was cancelled"
@@ -456,5 +445,36 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
         return permissionState == PackageManager.PERMISSION_GRANTED
     }
 
+    private fun initClicks() {
+        signOutButton.setOnClickListener {
+            signOutPassenger()
+        }
+        this.bookTaxiButton.setOnClickListener {
+            var currentLatLng = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
+            val passengerID = FirebaseAuth.getInstance().currentUser?.uid
+            val customerRequestRef = FirebaseDatabase.getInstance().getReference("customerRequests")
+            val geoFire: GeoFire = GeoFire(customerRequestRef)
+            geoFire.setLocation(
+                passengerID,
+                GeoLocation(currentLatLng.longitude, currentLatLng.latitude)
+            )
 
+            pickUpLocation = currentLatLng
+            stopLocationUpdates()
+            mMap.addMarker(MarkerOptions().position(pickUpLocation).title("Pick up here"))
+
+            gettingNearestTaxi()
+
+        }
+    }
+
+    private fun initView() {
+        signOutButton = findViewById(R.id.sign_out_Button)
+        bookTaxiButton = findViewById(R.id.bookTaxiButton)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        signOutPassenger()
+    }
 }
