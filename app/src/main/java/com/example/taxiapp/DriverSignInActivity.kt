@@ -8,12 +8,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.taxiapp.model.Driver
-import com.firebase.geofire.GeoFire
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 
@@ -189,10 +187,10 @@ class DriverSignInActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        emailInput = findViewById(R.id.driver_input_email)
-        nameInput = findViewById(R.id.driver_name_input)
-        passwordInput = findViewById(R.id.driver_password_input)
-        passwordConfirmInput = findViewById(R.id.driver_password_confirmation_input)
+        emailInput = findViewById(R.id.passenger_input_email)
+        nameInput = findViewById(R.id.passenger_name_input)
+        passwordInput = findViewById(R.id.passenger_passwordInput)
+        passwordConfirmInput = findViewById(R.id.passenger_password_confirmation_input)
         logInSignInButton = findViewById(R.id.passenger_login_button)
         toggleLoginSignUp = findViewById(R.id.passenger_toggle_login_signup_textView)
         activityHeader = findViewById(R.id.driverSignInSignUp)
