@@ -193,6 +193,8 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     mMap.addMarker(
                         MarkerOptions().position(driverLatLng).title("Your driver is here")
                     )
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(driverLatLng))
+                    mMap.animateCamera(CameraUpdateFactory.zoomTo(12f))
                     Log.i("cause", "Your driver is here")
                 }
 
@@ -326,13 +328,20 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+
+    private var  marker : Marker? = null
     private fun updateLocationUi() {
+
         if (currentLocation != null) {
             var currentLatLng = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
-//            mMap.clear()
-//            mMap.addMarker(MarkerOptions().position(currentLatLng).title("Passenger Location"))
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng))
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(15f))
+
+            if(marker != null){
+                marker?.remove()
+            }
+            marker = mMap.addMarker(MarkerOptions().position(currentLatLng).title("You are here"))
+
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(12f))
+
         }
     }
 
@@ -458,11 +467,13 @@ class PassengerMapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 passengerID,
                 GeoLocation(currentLatLng.longitude, currentLatLng.latitude)
             )
-
-            pickUpLocation = currentLatLng
-            stopLocationUpdates()
-            mMap.addMarker(MarkerOptions().position(pickUpLocation).title("Pick up here"))
-
+//
+//            pickUpLocation = currentLatLng
+//            stopLocationUpdates()
+//            mMap.clear()
+//            mMap.addMarker(MarkerOptions().position(pickUpLocation).title("Pick up here"))
+//            mMap.moveCamera(CameraUpdateFactory.newLatLng(pickUpLocation))
+//            mMap.animateCamera(CameraUpdateFactory.zoomTo(15f))
             gettingNearestTaxi()
 
         }
